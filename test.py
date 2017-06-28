@@ -3,7 +3,7 @@ import tkinter.ttk as ttk
 from tkinter.filedialog import askdirectory
 
 class CustomWidget(tk.Frame):
-    def __init__(self, parent, n):
+    def __init__(self, parent, n, remove_callback):
         tk.Frame.__init__(self, parent)
 
         self.path = tk.StringVar()
@@ -33,11 +33,8 @@ class CustomWidget(tk.Frame):
                   background=[('active', 'white'), ('!disabled', "white")]
                   )
 
-        self.removeButton = ttk.Button(self.root, text="移除", command=self.remove, style="C.TButton")
+        self.removeButton = ttk.Button(self.root, text="移除", command=lambda: remove_callback(self), style="C.TButton")
         self.removeButton.grid(ipadx=10, padx=0, pady=0, row=1, column=3)
-
-    def remove(self):
-        self.grid_forget()
 
     def select_path(self):
         path_ = askdirectory()
@@ -45,6 +42,9 @@ class CustomWidget(tk.Frame):
 
     def get_filename(self):
         return self.filename
+
+    def set_label_n(self, n):
+        self.root.config(text=str(n))
 
 
 class Application(ttk.Frame):
@@ -60,7 +60,7 @@ class Application(ttk.Frame):
         self.first.grid_columnconfigure(0, weight=1)
         self.first.grid_rowconfigure(0, weight=1)
 
-        self.workingDirectoryLabel = ttk.Label(self.first, text="選擇要歸類處理的資料夾")
+        self.workingDirectoryLabel = ttk.Label(self.first, text="選擇要歸類處理的資料夾:")
         self.workingDirectoryLabel.grid(row=0, column=0, sticky="EW")
 
         self.workingDirectoryPath = tk.StringVar()
@@ -100,10 +100,18 @@ class Application(ttk.Frame):
 
     def add(self):
         i = len(self.customWidgetList) + 1
-        widget = CustomWidget(self.third, str(i))
+        print("add %d" % i)
+        widget = CustomWidget(self.third, str(i), self.remove)
         self.customWidgetList.append(widget)
         widget.grid(row=i, column=0, sticky="EW")
-        self.grid_rowconfigure(i - 1, weight=0)
+        self.grid_rowconfigure(i - 1, weight=1)
+
+    def remove(self, custom_widget):
+        self.customWidgetList.remove(custom_widget)
+        custom_widget.grid_forget()
+        for i in range(len(self.customWidgetList)):
+            self.customWidgetList[i].set_label_n(i+1)
+            self.customWidgetList[i].grid(row=(i+1), column=0, sticky="EW")
 
 if __name__ == "__main__":
     root = tk.Tk()
