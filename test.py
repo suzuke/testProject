@@ -21,10 +21,10 @@ class CustomWidget(tk.Frame):
         self.pathLabel = ttk.Label(self.root, text="檔案歸檔路徑")
         self.pathLabel.grid(ipadx=10, padx=10, pady=0, row=0, column=1)
 
-        self.pathEntry = ttk.Entry(self.root, textvariable=self.path, width=25)
+        self.pathEntry = ttk.Entry(self.root, textvariable=self.path, width=35)
         self.pathEntry.grid(ipadx=10, padx=1, pady=0, row=1, column=1)
 
-        self.pathButton = ttk.Button(self.root, text="選擇資料夾", command=self.select_path)
+        self.pathButton = ttk.Button(self.root, text="選擇資料夾", command=self.select_path, width=10)
         self.pathButton.grid(ipadx=10, padx=1, pady=0, row=1, column=2)
 
         style = ttk.Style()
@@ -33,7 +33,7 @@ class CustomWidget(tk.Frame):
                   background=[('active', 'white'), ('!disabled', "white")]
                   )
 
-        self.removeButton = ttk.Button(self.root, text="移除", command=lambda: remove_callback(self), style="C.TButton")
+        self.removeButton = ttk.Button(self.root, text="移除", command=lambda: remove_callback(self), style="C.TButton", width=5)
         self.removeButton.grid(ipadx=10, padx=0, pady=0, row=1, column=3)
 
     def select_path(self):
