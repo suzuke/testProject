@@ -3,7 +3,7 @@ import tkinter.ttk as ttk
 from tkinter.filedialog import askdirectory
 
 class CustomWidget(tk.Frame):
-    def __init__(self, parent, n, remove_callback):
+    def __init__(self, parent, n):
         tk.Frame.__init__(self, parent)
 
         self.path = tk.StringVar()
@@ -33,8 +33,11 @@ class CustomWidget(tk.Frame):
                   background=[('active', 'white'), ('!disabled', "white")]
                   )
 
-        self.removeButton = ttk.Button(self.root, text="移除", command=lambda: remove_callback(n), style="C.TButton")
+        self.removeButton = ttk.Button(self.root, text="移除", command=self.remove, style="C.TButton")
         self.removeButton.grid(ipadx=10, padx=0, pady=0, row=1, column=3)
+
+    def remove(self):
+        self.grid_forget()
 
     def select_path(self):
         path_ = askdirectory()
@@ -79,20 +82,14 @@ class Application(ttk.Frame):
         self.addSettingLabel = ttk.Label(self.second, text="歸類檔案項目設定")
         self.addSettingLabel.grid(row=0, column=0, sticky="EW")
 
-        self.addSettingButton = ttk.Button(self.second, text="+新増歸類檔案項目")
+        self.addSettingButton = ttk.Button(self.second, text="+新増歸類檔案項目", command=self.add)
         self.addSettingButton.grid(row=1, column=0, sticky="EW")
 
         # third
         self.third = ttk.LabelFrame(self.applicationRoot, text="")
         self.third.grid(row=2, column=0, padx=30, pady=5, ipadx=1, ipady=1)
 
-        for i in range(1, 5, 1):
-            self.e = CustomWidget(self.third, str(i), self.myfunction)
-            self.e.grid(row=i, column=0, sticky="EW")
-            self.grid_rowconfigure(i - 1, weight=0)
-
-    def myfunction(self, n):
-        print("delete %s" % n)
+        self.customWidgetList = []
 
     def select_working_path(self):
         path_ = askdirectory()
@@ -101,8 +98,16 @@ class Application(ttk.Frame):
     def start(self):
         print("Start...")
 
+    def add(self):
+        i = len(self.customWidgetList) + 1
+        widget = CustomWidget(self.third, str(i))
+        self.customWidgetList.append(widget)
+        widget.grid(row=i, column=0, sticky="EW")
+        self.grid_rowconfigure(i - 1, weight=0)
+
 if __name__ == "__main__":
     root = tk.Tk()
+    root.title("檔案自動分類")
     app = Application(root)
     app.grid(row=0, column=0)
     root.mainloop()
