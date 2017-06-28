@@ -1,15 +1,17 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter.filedialog import askdirectory
+import json, os
 
 class CustomWidget(tk.Frame):
-    def __init__(self, parent, n, remove_callback):
+    def __init__(self, parent, n, remove_callback, data=""):
         tk.Frame.__init__(self, parent)
 
         self.path = tk.StringVar()
         self.filename = tk.StringVar()
+        self.n = n
 
-        self.root = ttk.LabelFrame(self, text=n)
+        self.root = ttk.LabelFrame(self, text=self.n)
         self.root.grid(padx=1, pady=5, ipadx=1, ipady=1, sticky="EW")
 
         self.filenameLabel = ttk.Label(self.root, text="檔案名稱")
@@ -36,21 +38,47 @@ class CustomWidget(tk.Frame):
         self.removeButton = ttk.Button(self.root, text="移除", command=lambda: remove_callback(self), style="C.TButton", width=5)
         self.removeButton.grid(ipadx=10, padx=0, pady=0, row=1, column=3)
 
+        self.restore(data)
+
     def select_path(self):
         path_ = askdirectory()
         self.path.set(path_)
 
     def get_filename(self):
-        return self.filename
+        return self.filename.get()
+
+    def get_path(self):
+        return self.path.get()
 
     def set_label_n(self, n):
-        self.root.config(text=str(n))
+        self.root.config(text=n)
+        self.n = n
+
+    def get_label_n(self):
+        return self.n
+
+    def get_json_string(self):
+        data = [{"n": self.n,
+                 "value": (self.filename.get(), self.path.get())
+                 }]
+        return json.dumps(data)
+
+    def restore(self, json_string):
+        if json_string is "":
+            return
+        data = json.loads(json_string)
+        self.set_label_n(data[0]["n"])
+        self.filenameEntry.delete(0, tk.END)
+        self.filenameEntry.insert(0, data[0]["value"][0])
+        self.pathEntry.delete(0, tk.END)
+        self.pathEntry.insert(0, data[0]["value"][1])
 
 
 class Application(ttk.Frame):
     def __init__(self, parent):
         super(Application, self).__init__(parent, width=800, height=400)
 
+        self.data = os.getcwd() + "\data"
         self.applicationRoot = ttk.Frame(self)
         self.applicationRoot.grid(row=0, column=0, padx=30, pady=5)
 
@@ -105,11 +133,28 @@ class Application(ttk.Frame):
         self.workingDirectoryPath.set(path_)
 
     def start(self):
-        print("Start...")
+        #json_string = self.customWidgetList[0].get_json_string()
+        #self.customWidgetList[1].restore(json_string)
+        #self.save()
+        #self.load()
+
+    def save(self):
+        with open(self.data, "w") as f:
+            for i in range(len(self.customWidgetList)):
+                f.write(self.customWidgetList[i].get_json_string() + "\n")
+
+    def load(self):
+        self.customWidgetList.clear()
+        with open(self.data, "r") as f:
+            for line in f:
+                widget = CustomWidget(self.frame, "", self.remove, line)
+                self.customWidgetList.append(widget)
+                i = int(widget.get_label_n())
+                widget.grid(row=i, column=0, sticky="EW")
+                self.grid_rowconfigure(i - 1, weight=1)
 
     def add(self):
         i = len(self.customWidgetList) + 1
-        print("add %d" % i)
         widget = CustomWidget(self.frame, str(i), self.remove)
         self.customWidgetList.append(widget)
         widget.grid(row=i, column=0, sticky="EW")
@@ -119,7 +164,7 @@ class Application(ttk.Frame):
         self.customWidgetList.remove(custom_widget)
         custom_widget.grid_forget()
         for i in range(len(self.customWidgetList)):
-            self.customWidgetList[i].set_label_n(i+1)
+            self.customWidgetList[i].set_label_n(str(i+1))
             self.customWidgetList[i].grid(row=(i+1), column=0, sticky="EW")
 
     def OnFrameConfigure(self, event):
