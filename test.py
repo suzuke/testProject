@@ -51,8 +51,11 @@ class Application(ttk.Frame):
         self.applicationRoot = ttk.Frame(self)
         self.applicationRoot.grid(row=0, column=0, padx=30, pady=5)
 
+        # first
         self.first = ttk.LabelFrame(self.applicationRoot, text="")
-        self.first.grid(row=0, column=0, padx=30, pady=5, ipadx=1, ipady=1)
+        self.first.grid(row=0, column=0, padx=15, pady=5, ipadx=171, ipady=1)
+        self.first.grid_columnconfigure(0, weight=1)
+        self.first.grid_rowconfigure(0, weight=1)
 
         self.workingDirectoryLabel = ttk.Label(self.first, text="選擇要歸類處理的資料夾")
         self.workingDirectoryLabel.grid(row=0, column=0, sticky="EW")
@@ -65,13 +68,26 @@ class Application(ttk.Frame):
         self.workingDirectoryPathButton.grid(row=1, column=1, sticky="EW")
 
         self.startButton = ttk.Button(self.first, text="一鍵歸類", command=self.start)
-        self.startButton.grid(row=2, column=0, sticky="EWNS")
+        self.startButton.grid(row=2, column=0, sticky="EWNS", columnspan=2)
 
+        # second
         self.second = ttk.LabelFrame(self.applicationRoot, text="")
-        self.second.grid(row=1, column=0, padx=30, pady=5, ipadx=1, ipady=1)
+        self.second.grid(row=1, column=0, padx=15, pady=5, ipadx=230, ipady=1)
+        self.second.grid_columnconfigure(0, weight=1)
+        self.second.grid_rowconfigure(0, weight=1)
+
+        self.addSettingLabel = ttk.Label(self.second, text="歸類檔案項目設定")
+        self.addSettingLabel.grid(row=0, column=0, sticky="EW")
+
+        self.addSettingButton = ttk.Button(self.second, text="+新増歸類檔案項目")
+        self.addSettingButton.grid(row=1, column=0, sticky="EW")
+
+        # third
+        self.third = ttk.LabelFrame(self.applicationRoot, text="")
+        self.third.grid(row=2, column=0, padx=30, pady=5, ipadx=1, ipady=1)
 
         for i in range(1, 5, 1):
-            self.e = CustomWidget(self.second, str(i), self.myfunction)
+            self.e = CustomWidget(self.third, str(i), self.myfunction)
             self.e.grid(row=i, column=0, sticky="EW")
             self.grid_rowconfigure(i - 1, weight=0)
 
