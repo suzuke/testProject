@@ -49,6 +49,10 @@ class CustomWidget(tk.Frame):
     def select_path(self):
         path_ = askdirectory()
         self.path.set(path_)
+        if os.path.isdir(path_):
+            self.set_path_label(0)
+        else:
+            self.set_path_label(1)
 
     def get_filename(self):
         return self.filename.get()
@@ -79,7 +83,7 @@ class CustomWidget(tk.Frame):
         self.pathEntry.delete(0, tk.END)
         self.pathEntry.insert(0, data[0]["value"][1])
 
-    def path_not_exists(self, error_code):
+    def set_path_label(self, error_code):
         self.pathLabel.configure(text=self.path_label_text_map[error_code][0],
                                  foreground=self.path_label_text_map[error_code][1])
 
@@ -147,7 +151,7 @@ class Application(ttk.Frame):
 
         self.canvas.create_window((4, 4), window=self.frame, anchor="nw", tags="self.frame")
 
-        self.frame.bind("<Configure>", self.OnFrameConfigure)
+        self.frame.bind("<Configure>", self.on_frame_configure)
 
         self.customWidgetList = []
 
@@ -178,10 +182,10 @@ class Application(ttk.Frame):
                         if widget.get_filename() in file:
                             to_folder = widget.get_path()
                             if os.path.isdir(to_folder):
-                                widget.path_not_exists(0)
+                                widget.set_path_label(0)
                                 self.moveto(file, working_directory, to_folder)
                             else:
-                                widget.path_not_exists(1)
+                                widget.set_path_label(1)
         else:
             self.set_label(1)
 
@@ -235,7 +239,7 @@ class Application(ttk.Frame):
                     os.makedirs(to_folder)
                 os.rename(from_file, to_file)
 
-    def OnFrameConfigure(self, event):
+    def on_frame_configure(self, event):
         '''Reset the scroll region to encompass the inner frame'''
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
@@ -243,6 +247,13 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.resizable(False, False)
     root.title("檔案自動分類")
+
     app = Application(root)
     app.grid(row=0, column=0)
+
+    #def on_close():
+    #    app.save()
+    #    root.destroy()
+    #root.protocol("WM_DELETE_WINDOW", on_close)
+
     root.mainloop()
