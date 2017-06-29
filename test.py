@@ -84,7 +84,7 @@ class Application(ttk.Frame):
 
         # first
         self.first = ttk.LabelFrame(self.applicationRoot, text="A.選擇要歸類處理的資料夾")
-        self.first.grid(row=0, column=0, padx=1, pady=5, ipadx=171, ipady=1)
+        self.first.grid(row=0, column=0, padx=1, pady=1, ipadx=171, ipady=1)
         self.first.grid_columnconfigure(0, weight=1)
         self.first.grid_rowconfigure(0, weight=1)
 
@@ -136,7 +136,7 @@ class Application(ttk.Frame):
         #json_string = self.customWidgetList[0].get_json_string()
         #self.customWidgetList[1].restore(json_string)
         #self.save()
-        #self.load()
+        self.load()
 
     def save(self):
         with open(self.data, "w") as f:
@@ -166,6 +166,17 @@ class Application(ttk.Frame):
         for i in range(len(self.customWidgetList)):
             self.customWidgetList[i].set_label_n(str(i+1))
             self.customWidgetList[i].grid(row=(i+1), column=0, sticky="EW")
+
+    def moveto(self, filename, from_folder, to_folder):
+        from_file = os.path.join(from_folder, filename)
+        to_file = os.path.join(to_folder, filename)
+        # to move only files, not folders
+        if not to_file == from_file:
+            print('moved: ' + str(to_file))
+            if os.path.isfile(from_file):
+                if not os.path.exists(to_folder):
+                    os.makedirs(to_folder)
+                os.rename(from_file, to_file)
 
     def OnFrameConfigure(self, event):
         '''Reset the scroll region to encompass the inner frame'''
