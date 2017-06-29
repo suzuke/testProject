@@ -1,9 +1,11 @@
+#!/usr/bin/env python
+#coding=utf-8
+
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter.filedialog import askdirectory
 import json
 import os
-import re
 
 class CustomWidget(tk.Frame):
     def __init__(self, parent, n, remove_callback, data=""):
@@ -146,7 +148,6 @@ class Application(ttk.Frame):
                             to_folder = widget.get_path()
                             if os.path.isdir(to_folder):
                                 self.moveto(file, working_directory, to_folder)
-
 
     def save(self):
         with open(self.data, "w") as f:
