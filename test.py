@@ -4,6 +4,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter.filedialog import askdirectory
+from tkinter import messagebox
 import json
 import os
 
@@ -16,6 +17,8 @@ class CustomWidget(tk.Frame):
         self.n = n
         self.path_label_text_map = {0: ("檔案歸檔路徑", "black"),
                                     1: ("檔案歸檔路徑不存在", "red")}
+
+        self.remove_callback = remove_callback
 
         self.root = ttk.LabelFrame(self, text=self.n)
         self.root.grid(padx=1, pady=1, ipadx=1, ipady=1, sticky="EW")
@@ -41,7 +44,7 @@ class CustomWidget(tk.Frame):
                   background=[('active', 'white'), ('!disabled', "white")]
                   )
 
-        self.removeButton = ttk.Button(self.root, text="移除", command=lambda: remove_callback(self), style="C.TButton", width=5)
+        self.removeButton = ttk.Button(self.root, text="移除", command=self.remove, style="C.TButton", width=5)
         self.removeButton.grid(ipadx=10, padx=0, pady=0, row=1, column=3)
 
         self.restore(data)
@@ -86,6 +89,10 @@ class CustomWidget(tk.Frame):
     def set_path_label(self, error_code):
         self.pathLabel.configure(text=self.path_label_text_map[error_code][0],
                                  foreground=self.path_label_text_map[error_code][1])
+
+    def remove(self):
+        if messagebox.askokcancel("刪除", "是否真的要移除?"):
+            self.remove_callback(self)
 
 
 class Application(ttk.Frame):
