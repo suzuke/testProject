@@ -14,17 +14,19 @@ class CustomWidget(tk.Frame):
         self.path = tk.StringVar()
         self.filename = tk.StringVar()
         self.n = n
+        self.path_label_text_map = {0: ("檔案歸檔路徑", "black"),
+                                    1: ("檔案歸檔路徑不存在", "red")}
 
         self.root = ttk.LabelFrame(self, text=self.n)
-        self.root.grid(padx=1, pady=5, ipadx=1, ipady=1, sticky="EW")
+        self.root.grid(padx=1, pady=1, ipadx=1, ipady=1, sticky="EW")
 
         self.filenameLabel = ttk.Label(self.root, text="檔案名稱")
         self.filenameLabel.grid(ipadx=10, padx=10, pady=0, row=0, column=0)
 
         self.filenameEntry = ttk.Entry(self.root, textvariable=self.filename, width=10)
-        self.filenameEntry.grid(ipadx=10, padx=10, pady=0, row=1, column=0)
+        self.filenameEntry.grid(ipadx=10, padx=1, pady=0, row=1, column=0)
 
-        self.pathLabel = ttk.Label(self.root, text="檔案歸檔路徑")
+        self.pathLabel = ttk.Label(self.root, text=self.path_label_text_map[0][0], foreground=self.path_label_text_map[0][1])
         self.pathLabel.grid(ipadx=10, padx=10, pady=0, row=0, column=1)
 
         self.pathEntry = ttk.Entry(self.root, textvariable=self.path, width=35)
@@ -77,6 +79,10 @@ class CustomWidget(tk.Frame):
         self.pathEntry.delete(0, tk.END)
         self.pathEntry.insert(0, data[0]["value"][1])
 
+    def path_not_exists(self, error_code):
+        self.pathLabel.configure(text=self.path_label_text_map[error_code][0],
+                                 foreground=self.path_label_text_map[error_code][1])
+
 
 class Application(ttk.Frame):
     def __init__(self, parent):
@@ -88,19 +94,26 @@ class Application(ttk.Frame):
 
         # first
         self.first = ttk.LabelFrame(self.applicationRoot, text="A.選擇要歸類處理的資料夾")
-        self.first.grid(row=0, column=0, padx=1, pady=1, ipadx=171, ipady=1)
+        self.first.grid(row=0, column=0, padx=1, pady=10, ipadx=175, ipady=1)
         self.first.grid_columnconfigure(0, weight=1)
         self.first.grid_rowconfigure(0, weight=1)
 
+        self.label_text_map = {0: ("", "black"),
+                               1: ("歸類處理的資料夾不存在", "red"),
+                               2: ("歸類處理的資料夾為空", "red"),
+                               3: ("歸類檔案項目為空，請新增項目", "red")}
+        self.label = ttk.Label(self.first, text="")
+        self.label.grid(row=0, column=0, sticky="EW")
+
         self.workingDirectoryPath = tk.StringVar()
         self.workingDirectoryPathEntry = ttk.Entry(self.first, textvariable=self.workingDirectoryPath)
-        self.workingDirectoryPathEntry.grid(row=0, column=0, sticky="EW")
+        self.workingDirectoryPathEntry.grid(row=1, column=0, sticky="EW")
 
         self.workingDirectoryPathButton = ttk.Button(self.first, text="選擇資料夾", command=self.select_working_path)
-        self.workingDirectoryPathButton.grid(row=0, column=1, sticky="EW")
+        self.workingDirectoryPathButton.grid(row=1, column=1, sticky="EW")
 
         self.startButton = ttk.Button(self.first, text="一鍵歸類", command=self.start)
-        self.startButton.grid(row=1, column=0, sticky="EWNS", columnspan=2)
+        self.startButton.grid(row=2, column=0, sticky="EWNS", columnspan=2)
 
         # second
         self.second = ttk.LabelFrame(self.applicationRoot, text="B.歸類檔案項目設定")
@@ -108,8 +121,14 @@ class Application(ttk.Frame):
         self.second.grid_columnconfigure(0, weight=1)
         self.second.grid_rowconfigure(0, weight=1)
 
-        self.addSettingButton = ttk.Button(self.second, text="+新増歸類檔案項目", command=self.add)
+        self.addSettingButton = ttk.Button(self.second, text=" 儲存設定", command=self.save)
         self.addSettingButton.grid(row=0, column=0, sticky="EW")
+
+        self.addSettingButton = ttk.Button(self.second, text=" 載入設定", command=self.load)
+        self.addSettingButton.grid(row=1, column=0, sticky="EW")
+
+        self.addSettingButton = ttk.Button(self.second, text="+新増歸類檔案項目", command=self.add)
+        self.addSettingButton.grid(row=2, column=0, sticky="EW")
 
         # third
         self.third = ttk.LabelFrame(self.applicationRoot, text="C.歸類檔案項目")
@@ -135,28 +154,55 @@ class Application(ttk.Frame):
     def select_working_path(self):
         path_ = askdirectory()
         self.workingDirectoryPath.set(path_)
+        if os.path.isdir(path_):
+            self.set_label(0)
+        else:
+            self.set_label(1)
 
     def start(self):
         working_directory = self.workingDirectoryPath.get()
         if os.path.isdir(working_directory):
             files = [x for x in os.listdir(working_directory) if not x.startswith('.')]
+
+            if len(files) == 0:
+                self.set_label(2)
+
             for file in files:
                 file_path = os.path.join(self.workingDirectoryPath.get(), file)
                 if os.path.isfile(file_path):
+
+                    if len(self.customWidgetList) == 0:
+                        self.set_label(3)
+
                     for widget in self.customWidgetList:
                         if widget.get_filename() in file:
                             to_folder = widget.get_path()
                             if os.path.isdir(to_folder):
+                                widget.path_not_exists(0)
                                 self.moveto(file, working_directory, to_folder)
+                            else:
+                                widget.path_not_exists(1)
+        else:
+            self.set_label(1)
+
+    def set_label(self, error_code):
+        self.label.configure(text=self.label_text_map[error_code][0],
+                             foreground=self.label_text_map[error_code][1])
 
     def save(self):
         with open(self.data, "w") as f:
+            f.write(json.dumps([{"path": self.workingDirectoryPath.get()}]) + "\n")
             for i in range(len(self.customWidgetList)):
                 f.write(self.customWidgetList[i].get_json_string() + "\n")
 
     def load(self):
         self.customWidgetList.clear()
         with open(self.data, "r") as f:
+            line = f.readline()
+            if line is not "":
+                data = json.loads(line)
+                self.workingDirectoryPathEntry.delete(0, tk.END)
+                self.workingDirectoryPathEntry.insert(0, data[0]["path"])
             for line in f:
                 widget = CustomWidget(self.frame, "", self.remove, line)
                 self.customWidgetList.append(widget)
