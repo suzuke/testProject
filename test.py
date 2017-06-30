@@ -170,29 +170,34 @@ class Application(ttk.Frame):
         else:
             self.set_label(1)
 
+    def classify(self, file):
+        file_path = os.path.join(self.workingDirectoryPath.get(), file)
+        if os.path.isfile(file_path):
+
+            if len(self.customWidgetList) == 0:
+                self.set_label(3)
+
+            for widget in self.customWidgetList:
+                if widget.get_filename() in file:
+                    to_folder = widget.get_path()
+                    if os.path.isdir(to_folder):
+                        widget.set_path_label(0)
+                        self.moveto(file, self.workingDirectoryPath.get(), to_folder)
+                    else:
+                        widget.set_path_label(1)
+
     def start(self):
         working_directory = self.workingDirectoryPath.get()
         if os.path.isdir(working_directory):
             files = [x for x in os.listdir(working_directory) if not x.startswith('.')]
-
             if len(files) == 0:
                 self.set_label(2)
 
+            #single core
             for file in files:
-                file_path = os.path.join(self.workingDirectoryPath.get(), file)
-                if os.path.isfile(file_path):
+                self.classify(file)
 
-                    if len(self.customWidgetList) == 0:
-                        self.set_label(3)
-
-                    for widget in self.customWidgetList:
-                        if widget.get_filename() in file:
-                            to_folder = widget.get_path()
-                            if os.path.isdir(to_folder):
-                                widget.set_path_label(0)
-                                self.moveto(file, working_directory, to_folder)
-                            else:
-                                widget.set_path_label(1)
+            messagebox.showinfo("提示訊息", "已完成檔案歸類")
         else:
             self.set_label(1)
 
@@ -240,7 +245,7 @@ class Application(ttk.Frame):
         to_file = os.path.join(to_folder, filename)
         # to move only files, not folders
         if not to_file == from_file:
-            print('moved: ' + str(to_file))
+            #print('moved: ' + str(to_file))
             if os.path.isfile(from_file):
                 if not os.path.exists(to_folder):
                     os.makedirs(to_folder)
