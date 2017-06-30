@@ -25,5 +25,5 @@ if __name__ == "__main__":
 
     # create test files
     for keyword in keywords:
-        for i in range(100):
+        for i in range(1000):
             open(os.path.join(os.getcwd(), string_generator(10, keyword)), "a").close()
