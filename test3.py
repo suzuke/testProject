@@ -1,25 +1,17 @@
-from tkinter import *
+import multiprocessing
 
-class Application(Frame):
-    def __init__(self, master=None):
-        Frame.__init__(self, master)
-        self.number = 0
-        self.widgets = []
-        self.grid()
-        self.createWidgets()
+def task(keyword):
+    print(keyword)
+    return keyword
 
-    def createWidgets(self):
-        self.cloneButton = Button ( self, text='Clone', command=self.clone)
-        self.cloneButton.grid()
+def main():
+    keywords = ["w10100", "w10101", "w10102", "w10103", "w10104",
+                "w10105", "w10106", "w10107", "w10108", "w10109"]
+    multiprocessing.freeze_support()
+    pool = multiprocessing.Pool()
 
-    def clone(self):
-        widget = Label(self, text='label #%s' % self.number)
-        widget.grid()
-        self.widgets.append(widget)
-        self.number += 1
+    pool.map(task, (keywords,))
 
 
-if __name__ == "__main__":
-    app = Application()
-    app.master.title("Sample application")
-    app.mainloop()
+if __name__ == '__main__':
+    main()
