@@ -26,24 +26,26 @@ class CustomWidget(ttk.Frame):
         self.root.grid(row=0, column=0, padx=1, pady=1, ipadx=1, ipady=1, sticky="EW")
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
-        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_columnconfigure(1, weight=5)
+        self.root.grid_columnconfigure(2, weight=1)
+        self.root.grid_columnconfigure(3, weight=1)
 
         self.filenameLabel = ttk.Label(self.root, text="檔案名稱")
-        self.filenameLabel.grid(ipadx=1, padx=5, pady=0, row=0, column=0, sticky="W")
+        self.filenameLabel.grid(ipadx=1, padx=2, pady=0, row=0, column=0, sticky="W")
 
         self.filenameEntry = ttk.Entry(self.root, textvariable=self.filename)
-        self.filenameEntry.grid(ipadx=1, padx=5, pady=0, row=1, column=0, sticky="EW")
+        self.filenameEntry.grid(ipadx=1, padx=2, pady=0, row=1, column=0, sticky="EW")
 
         self.pathLabel = ttk.Label(self.root,
                                    text=self.path_label_text_map[0][0],
                                    foreground=self.path_label_text_map[0][1])
-        self.pathLabel.grid(ipadx=1, padx=5, pady=0, row=0, column=1, sticky="W")
+        self.pathLabel.grid(ipadx=1, padx=2, pady=0, row=0, column=1, sticky="W")
 
         self.pathEntry = ttk.Entry(self.root, textvariable=self.path)
-        self.pathEntry.grid(ipadx=1, padx=5, pady=0, row=1, column=1, sticky="EW")
+        self.pathEntry.grid(ipadx=1, padx=2, pady=0, row=1, column=1, sticky="EW")
 
         self.pathButton = ttk.Button(self.root, text="選擇資料夾", command=self.select_path, width=10)
-        self.pathButton.grid(ipadx=10, padx=1, pady=0, row=1, column=2)
+        self.pathButton.grid(ipadx=10, padx=1, pady=0, row=1, column=2, sticky="EW")
 
         style = ttk.Style()
         style.map("C.TButton",
@@ -52,7 +54,7 @@ class CustomWidget(ttk.Frame):
                   )
 
         self.removeButton = ttk.Button(self.root, text="移除", command=self.remove, style="C.TButton", width=5)
-        self.removeButton.grid(ipadx=10, padx=0, pady=0, row=1, column=3)
+        self.removeButton.grid(ipadx=10, padx=0, pady=0, row=1, column=3, sticky="EW")
 
         self.restore(data)
 
@@ -202,15 +204,19 @@ class Application(ttk.Frame):
         self.second.grid_rowconfigure(0, weight=1)
         self.second.grid_rowconfigure(1, weight=1)
         self.second.grid_rowconfigure(2, weight=1)
+        self.second.grid_rowconfigure(3, weight=1)
 
-        self.addSettingButton = ttk.Button(self.second, text=" 儲存設定", command=self.save)
-        self.addSettingButton.grid(row=0, column=0, sticky="EW")
+        self.saveButton = ttk.Button(self.second, text=" 儲存設定", command=self.save)
+        self.saveButton.grid(row=0, column=0, sticky="EW")
 
-        self.addSettingButton = ttk.Button(self.second, text=" 載入設定", command=self.load)
-        self.addSettingButton.grid(row=1, column=0, sticky="EW")
+        self.loadButton = ttk.Button(self.second, text=" 載入設定", command=self.load)
+        self.loadButton.grid(row=1, column=0, sticky="EW")
 
         self.addSettingButton = ttk.Button(self.second, text="+新増歸類檔案項目", command=self.add)
         self.addSettingButton.grid(row=2, column=0, sticky="EW")
+
+        self.clearSettingButton = ttk.Button(self.second, text="清除所有歸類檔案項目", command=self.clearall)
+        self.clearSettingButton.grid(row=3, column=0, sticky="EW")
 
         # third
         self.third = ttk.LabelFrame(self, text="歸類檔案項目")
@@ -229,13 +235,10 @@ class Application(ttk.Frame):
         else:
             self.set_label(1)
 
-    def classify(self, file):
+    def classify(self, file, widgets):
+        done = True
         file_path = os.path.join(self.workingDirectoryPath.get(), file)
         if os.path.isfile(file_path):
-
-            widgets = self.sc.get_widgets()
-            if len(widgets) == 0:
-                self.set_label(3)
 
             for widget in widgets:
                 if widget.get_filename() in file:
@@ -245,19 +248,32 @@ class Application(ttk.Frame):
                         self.moveto(file, self.workingDirectoryPath.get(), to_folder)
                     else:
                         widget.set_path_label(1)
+                        done = False
+
+        return done
 
     def start(self):
+        done = True
         working_directory = self.workingDirectoryPath.get()
         if os.path.isdir(working_directory):
             files = [x for x in os.listdir(working_directory) if not x.startswith('.')]
             if len(files) == 0:
                 self.set_label(2)
+                return
+
+            widgets = self.sc.get_widgets()
+            if len(widgets) == 0:
+                self.set_label(3)
+                return
 
             #single core
             for file in files:
-                self.classify(file)
+                done = self.classify(file, widgets)
 
-            messagebox.showinfo("提示訊息", "已完成檔案歸類")
+            if done:
+                messagebox.showinfo("提示訊息", "已完成檔案歸類")
+            else:
+                messagebox.showerror("提示訊息", "部分設定有誤，請檢查設定")
         else:
             self.set_label(1)
 
@@ -286,6 +302,9 @@ class Application(ttk.Frame):
     def add(self, data=""):
         self.sc.add_widget(data)
 
+    def clearall(self):
+        self.sc.clear()
+
     def moveto(self, filename, from_folder, to_folder):
         from_file = os.path.join(from_folder, filename)
         to_file = os.path.join(to_folder, filename)
@@ -301,6 +320,7 @@ if __name__ == "__main__":
     root.title("檔案歸類")
     root.iconbitmap("office.ico")
     root.geometry('800x600')
+    root.minsize(width=600, height=600)
     root.grid_columnconfigure(0, weight=1)
     root.grid_rowconfigure(0, weight=1)
 
