@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 
 import tkinter as tk
@@ -7,9 +7,7 @@ from tkinter.filedialog import askdirectory
 from tkinter import messagebox
 import json
 import os
-
-version = "版本: v0.1"
-
+import sys
 
 class CustomWidget(ttk.Frame):
     def __init__(self, parent, n, remove_callback, data="", **kwargs):
@@ -197,12 +195,15 @@ class scrollableContainer(tk.Frame):
     def clear(self):
         for widget in self.widgets:
             widget.grid_forget()
+        self.widgets.clear()
         self.update_layout()
 
 
 class Application(ttk.Frame):
     def __init__(self, parent, **kwargs):
         super(Application, self).__init__(parent, **kwargs)
+
+        self.version = "版本: v0.1"
 
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
@@ -227,7 +228,7 @@ class Application(ttk.Frame):
         self.label.grid(row=0, column=0, sticky="EW")
 
         self.workingDirectoryPath = tk.StringVar()
-        self.workingDirectoryPath.trace("w", self.checkWorkingPath)
+        self.workingDirectoryPath.trace("w", self.check_working_path)
         self.workingDirectoryPathEntry = ttk.Entry(self.first, textvariable=self.workingDirectoryPath)
         self.workingDirectoryPathEntry.grid(row=1, column=0, sticky="EW")
 
@@ -268,7 +269,7 @@ class Application(ttk.Frame):
         self.sc.grid(row=0, column=0, sticky="NSEW")
 
         # fourth
-        self.versionLabel = ttk.Label(self, text=version)
+        self.versionLabel = ttk.Label(self, text=self.version)
         self.versionLabel.grid(row=3, column=0, padx=10, pady=2, ipadx=1, ipady=1, sticky="E")
 
     def select_working_path(self):
@@ -362,19 +363,23 @@ class Application(ttk.Frame):
                     return True
         return False
 
-    def checkWorkingPath(self, *args):
+    def check_working_path(self, *args):
         _path = self.workingDirectoryPath.get()
         if os.path.isdir(_path):
             self.set_label(0)
         else:
             self.set_label(1)
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("檔案歸類")
-    root.iconbitmap("office.ico")
     root.geometry('800x600')
+    root.iconbitmap(resource_path("icon.ico"))
     root.minsize(width=600, height=600)
     root.grid_columnconfigure(0, weight=1)
     root.grid_rowconfigure(0, weight=1)
