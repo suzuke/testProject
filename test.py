@@ -154,6 +154,11 @@ class scrollableContainer(tk.Frame):
             self.widgets[i].grid(row=(i+1), column=0, sticky="EW")
         self.update_layout()
 
+    def clear(self):
+        for widget in self.widgets:
+            widget.grid_forget()
+        self.update_layout()
+
 class Application(ttk.Frame):
     def __init__(self, parent, **kwargs):
         super(Application, self).__init__(parent, **kwargs)
@@ -268,6 +273,7 @@ class Application(ttk.Frame):
                 f.write(widget.get_json_string() + "\n")
 
     def load(self):
+        self.sc.clear()
         with open(self.data, "r") as f:
             line = f.readline()
             if line is not "":
