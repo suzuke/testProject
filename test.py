@@ -8,6 +8,9 @@ from tkinter import messagebox
 import json
 import os
 
+
+version = "版本: v0.1"
+
 class CustomWidget(ttk.Frame):
     def __init__(self, parent, n, remove_callback, data="", **kwargs):
         ttk.Frame.__init__(self, parent, **kwargs)
@@ -227,6 +230,10 @@ class Application(ttk.Frame):
         self.sc = scrollableContainer(self.third, bd=2)
         self.sc.grid(row=0, column=0, sticky="NSEW")
 
+        # fourth
+        self.versionLabel = ttk.Label(self, text=version)
+        self.versionLabel.grid(row=3, column=0, padx=10, pady=2, ipadx=1, ipady=1, sticky="E")
+
     def select_working_path(self):
         path_ = askdirectory()
         self.workingDirectoryPath.set(path_)
@@ -316,7 +323,6 @@ class Application(ttk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    #root.resizable(False, False)
     root.title("檔案歸類")
     root.iconbitmap("office.ico")
     root.geometry('800x600')
