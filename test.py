@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#coding=utf-8
+# coding=utf-8
 
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -8,18 +8,25 @@ from tkinter import messagebox
 import json
 import os
 
-
 version = "版本: v0.1"
+
 
 class CustomWidget(ttk.Frame):
     def __init__(self, parent, n, remove_callback, data="", **kwargs):
         ttk.Frame.__init__(self, parent, **kwargs)
 
-        self.path = tk.StringVar()
-        self.filename = tk.StringVar()
+        self.ignore = False
         self.n = n
+
+        self.path = tk.StringVar()
+        self.path.trace("w", self.check_path)
         self.path_label_text_map = {0: ("檔案歸檔路徑", "black"),
                                     1: ("檔案歸檔路徑不存在", "red")}
+
+        self.filename = tk.StringVar()
+        self.filename.trace("w", self.check_filename)
+        self.filename_label_text_map = {0: ("檔案名稱關鍵字", "black"),
+                                        1: ("檔案名稱關鍵字不能為空", "red")}
 
         self.remove_callback = remove_callback
         self.grid_columnconfigure(0, weight=1)
@@ -33,7 +40,9 @@ class CustomWidget(ttk.Frame):
         self.root.grid_columnconfigure(2, weight=1)
         self.root.grid_columnconfigure(3, weight=1)
 
-        self.filenameLabel = ttk.Label(self.root, text="檔案名稱")
+        self.filenameLabel = ttk.Label(self.root,
+                                       text=self.filename_label_text_map[0][0],
+                                       foreground=self.filename_label_text_map[0][1])
         self.filenameLabel.grid(ipadx=1, padx=2, pady=0, row=0, column=0, sticky="W")
 
         self.filenameEntry = ttk.Entry(self.root, textvariable=self.filename)
@@ -98,52 +107,78 @@ class CustomWidget(ttk.Frame):
         self.pathEntry.delete(0, tk.END)
         self.pathEntry.insert(0, data[0]["value"][1])
 
-    def set_path_label(self, error_code):
-        self.pathLabel.configure(text=self.path_label_text_map[error_code][0],
-                                 foreground=self.path_label_text_map[error_code][1])
+    def set_filename_label(self, msg_code):
+        self.filenameLabel.configure(text=self.filename_label_text_map[msg_code][0],
+                                     foreground=self.filename_label_text_map[msg_code][1])
+
+    def set_path_label(self, msg_code):
+        self.pathLabel.configure(text=self.path_label_text_map[msg_code][0],
+                                 foreground=self.path_label_text_map[msg_code][1])
 
     def remove(self):
         if messagebox.askokcancel("刪除", "是否真的要移除?"):
             self.remove_callback(self)
 
+    def check_path(self, *args):
+        _path = self.path.get()
+        if os.path.isdir(_path):
+            self.set_path_label(0)
+            self.ignore = False
+        else:
+            self.set_path_label(1)
+            self.ignore = True
+
+    def check_filename(self, *args):
+        _filename = self.filename.get()
+        if _filename.strip():
+            self.set_filename_label(0)
+            self.ignore = False
+        else:
+            self.set_filename_label(1)
+            self.ignore = True
+
+    def need_ignore(self):
+        return self.ignore
+
+
 class scrollableContainer(tk.Frame):
     """A scrollable container that can contain a number of messages"""
 
     def __init__(self, master, **kwargs):
-        tk.Frame.__init__(self, master, **kwargs) #holds canvas & scrollbars
+        tk.Frame.__init__(self, master, **kwargs)  # holds canvas & scrollbars
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        self.canv = tk.Canvas(self, bd=0, highlightthickness=0)
-        self.vScroll = ttk.Scrollbar(self, orient='vertical', command=self.canv.yview)
+        self.canvas = tk.Canvas(self, bd=0, highlightthickness=0)
+        self.vScroll = ttk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
         self.vScroll.grid(row=0, column=1, sticky='ns')
-        self.canv.grid(row=0, column=0, sticky='nsew')
-        self.canv.configure(yscrollcommand=self.vScroll.set)
+        self.canvas.grid(row=0, column=0, sticky='nsew')
+        self.canvas.configure(yscrollcommand=self.vScroll.set)
 
-        self.frm = tk.Frame(self.canv, bd=2) #holds widget
+        self.frm = tk.Frame(self.canvas, bd=2)  # holds widget
         self.frm.grid_columnconfigure(0, weight=1)
 
-        self.canv.create_window(0, 0, window=self.frm, anchor='nw', tags='inner')
+        self.canvas.create_window(0, 0, window=self.frm, anchor='nw', tags='inner')
 
         self.widgets = []
 
         self.update_layout()
-        self.canv.bind('<Configure>', self.on_configure)
+        self.canvas.bind('<Configure>', self.on_configure)
 
     def update_layout(self):
         self.frm.update_idletasks()
-        self.canv.configure(scrollregion=self.canv.bbox('all'))
-        self.canv.yview('moveto', '1.0')
+        self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+        self.canvas.yview('moveto', '1.0')
         self.size = self.frm.grid_size()
 
     def on_configure(self, event):
         w, h = event.width, event.height
         natural = self.frm.winfo_reqwidth()
-        self.canv.itemconfigure('inner', width=w if w > natural else natural)
-        self.canv.configure(scrollregion=self.canv.bbox('all'))
+        self.canvas.itemconfigure('inner', width=w if w > natural else natural)
+        self.canvas.configure(scrollregion=self.canvas.bbox('all'))
 
     def add_widget(self, data):
-        w = CustomWidget(self.frm, self.size[1]+1, self.remove, data)
+        w = CustomWidget(self.frm, self.size[1] + 1, self.remove, data)
         w.grid(row=self.size[1], column=0, padx=2, pady=2, sticky='we')
         self.widgets.append(w)
         self.update_layout()
@@ -155,14 +190,15 @@ class scrollableContainer(tk.Frame):
         self.widgets.remove(widget)
         widget.grid_forget()
         for i in range(len(self.widgets)):
-            self.widgets[i].set_label_n(str(i+1))
-            self.widgets[i].grid(row=(i+1), column=0, sticky="EW")
+            self.widgets[i].set_label_n(str(i + 1))
+            self.widgets[i].grid(row=(i + 1), column=0, sticky="EW")
         self.update_layout()
 
     def clear(self):
         for widget in self.widgets:
             widget.grid_forget()
         self.update_layout()
+
 
 class Application(ttk.Frame):
     def __init__(self, parent, **kwargs):
@@ -185,12 +221,13 @@ class Application(ttk.Frame):
 
         self.label_text_map = {0: ("", "black"),
                                1: ("歸類處理的資料夾不存在", "red"),
-                               2: ("歸類處理的資料夾為空", "red"),
-                               3: ("歸類檔案項目為空，請新增項目", "red")}
+                               2: ("歸類處理的資料夾為空", "red")}
+
         self.label = ttk.Label(self.first, text="")
         self.label.grid(row=0, column=0, sticky="EW")
 
         self.workingDirectoryPath = tk.StringVar()
+        self.workingDirectoryPath.trace("w", self.checkWorkingPath)
         self.workingDirectoryPathEntry = ttk.Entry(self.first, textvariable=self.workingDirectoryPath)
         self.workingDirectoryPathEntry.grid(row=1, column=0, sticky="EW")
 
@@ -218,7 +255,7 @@ class Application(ttk.Frame):
         self.addSettingButton = ttk.Button(self.second, text="+新増歸類檔案項目", command=self.add)
         self.addSettingButton.grid(row=2, column=0, sticky="EW")
 
-        self.clearSettingButton = ttk.Button(self.second, text="清除所有歸類檔案項目", command=self.clearall)
+        self.clearSettingButton = ttk.Button(self.second, text="清除所有歸類檔案項目", command=self.clear_all)
         self.clearSettingButton.grid(row=3, column=0, sticky="EW")
 
         # third
@@ -242,45 +279,48 @@ class Application(ttk.Frame):
         else:
             self.set_label(1)
 
-    def classify(self, file, widgets):
+    def classify(self, files, keyword, from_folder, to_folder):
         done = True
-        file_path = os.path.join(self.workingDirectoryPath.get(), file)
-        if os.path.isfile(file_path):
-
-            for widget in widgets:
-                if widget.get_filename() in file:
-                    to_folder = widget.get_path()
-                    if os.path.isdir(to_folder):
-                        widget.set_path_label(0)
-                        self.moveto(file, self.workingDirectoryPath.get(), to_folder)
-                    else:
-                        widget.set_path_label(1)
-                        done = False
-
+        for file in files:
+            if keyword in file:
+                done = self.move_to(file, from_folder, to_folder)
         return done
 
     def start(self):
+        check_ok = True
         done = True
         working_directory = self.workingDirectoryPath.get()
         if os.path.isdir(working_directory):
-            files = [x for x in os.listdir(working_directory) if not x.startswith('.')]
-            if len(files) == 0:
-                self.set_label(2)
-                return
-
             widgets = self.sc.get_widgets()
+
             if len(widgets) == 0:
-                self.set_label(3)
+                messagebox.showerror("提示訊息", "歸檔項目為空，請至少新增一項歸檔項目。")
                 return
 
-            #single core
-            for file in files:
-                done = self.classify(file, widgets)
+            # single core
+            for widget in widgets:
 
-            if done:
-                messagebox.showinfo("提示訊息", "已完成檔案歸類")
+                widget.check_path()
+                widget.check_filename()
+                if widget.need_ignore():
+                    check_ok = False
+                    continue
+
+                keyword = widget.get_filename()
+                to_folder = widget.get_path()
+
+                if not os.path.isdir(to_folder):
+                    widget.set_path_label(1)
+                    check_ok = False
+
+                if check_ok:
+                    files = [x for x in os.listdir(working_directory) if not x.startswith('.')]
+                    done = self.classify(files, keyword, working_directory, to_folder)
+
+            if check_ok:
+                messagebox.showinfo("提示訊息", "已完成檔案歸類。")
             else:
-                messagebox.showerror("提示訊息", "部分設定有誤，請檢查設定")
+                messagebox.showerror("提示訊息", "部分設定有誤，請檢查設定再試一次。")
         else:
             self.set_label(1)
 
@@ -309,17 +349,26 @@ class Application(ttk.Frame):
     def add(self, data=""):
         self.sc.add_widget(data)
 
-    def clearall(self):
+    def clear_all(self):
         self.sc.clear()
 
-    def moveto(self, filename, from_folder, to_folder):
+    def move_to(self, filename, from_folder, to_folder):
         from_file = os.path.join(from_folder, filename)
         to_file = os.path.join(to_folder, filename)
         if not to_file == from_file:
             if os.path.isfile(from_file):
-                if not os.path.exists(to_folder):
-                    os.makedirs(to_folder)
-                os.rename(from_file, to_file)
+                if os.path.exists(to_folder):
+                    os.rename(from_file, to_file)
+                    return True
+        return False
+
+    def checkWorkingPath(self, *args):
+        _path = self.workingDirectoryPath.get()
+        if os.path.isdir(_path):
+            self.set_label(0)
+        else:
+            self.set_label(1)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -333,9 +382,9 @@ if __name__ == "__main__":
     app = Application(root)
     app.grid(row=0, column=0, pady=10, sticky="NSEW")
 
-    #def on_close():
+    # def on_close():
     #    app.save()
     #    root.destroy()
-    #root.protocol("WM_DELETE_WINDOW", on_close)
+    # root.protocol("WM_DELETE_WINDOW", on_close)
 
     root.mainloop()
